@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+			 xmlns:beans="http://www.springframework.org/schema/beans"
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                        http://www.springframework.org/schema/security 
+                        http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+
+	<http pattern="/login" security="none" />
+	<http pattern="/resources/**" security="none" />
+
+
+	<http auto-config="true" use-expressions="true" access-denied-page="/denied">
+		<!-- default-target-url 指定了从登录页面登录后进行跳转的页面 always-use-default-target true表示登录成功后强制跳转 authentication-failure-url 表示验证失败后进入的页面 login-processing-url 设置验证登录验证地址，如果不设置，默认是j_spring_security_check 
+			username-parameter,password-parameter 设置登录用户名和密码的请求name，默认：j_username,j_password default-target-url="/user/home" -->
+		<form-login login-page="/login" always-use-default-target="true" authentication-failure-url="/login?error=1" authentication-success-handler-ref="successHandler" />
+
+		<!-- <intercept-url pattern="/index" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" /> <intercept-url pattern="/common" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" 
+			/> <intercept-url pattern="/admin" access="hasAnyRole('ROLE_ADMIN')" /> -->
+		<logout logout-success-url="/login" />
+
+		<!-- error-if-maximum-exceeded 后登陆的账号会挤掉第一次登陆的账号 session-fixation-protection 防止伪造sessionid攻击. 用户登录成功后会销毁用户当前的session. 创建新的session,并把用户信息复制到新session中. -->
+		<session-management invalid-session-url="/login?error=3" session-fixation-protection="none">
+			<concurrency-control max-sessions="1" error-if-maximum-exceeded="true" expired-url="/login?error=2" /><!-- 阻止第二次登录 -->
+		</session-management>
+		<custom-filter ref="appInterceptor" before="FILTER_SECURITY_INTERCEPTOR" />
+	</http>
+
+
+	<authentication-manager alias="appAuthenticationManager">
+		<authentication-provider user-service-ref="userDetailsService">
+		</authentication-provider>
+	</authentication-manager>
+
+	<beans:bean id="appInterceptor" class="com.duoduo.system.security.AppSecurityInterceptor">
+		<beans:property name="authenticationManager" ref="appAuthenticationManager" />
+		<beans:property name="accessDecisionManager" ref="appAccessDescisionManager" />
+		<beans:property name="securityMetadataSource" ref="appSecurityMetadataSource" />
+	</beans:bean>
+
+
+
+	<beans:bean id="userDetailsService" class="com.duoduo.system.security.UserDetailsServiceImpl" />
+
+	<beans:bean id="appSecurityMetadataSource" class="com.duoduo.system.security.AppSecurityMetadataSource">
+		<beans:constructor-arg name="roleService" ref="roleService"></beans:constructor-arg>
+		<beans:constructor-arg name="resourceService" ref="resourceService"></beans:constructor-arg>
+	</beans:bean>
+
+	<beans:bean id="appAccessDescisionManager" class="com.duoduo.system.security.AppAccessDescisionManager" />
+
+	<beans:bean id="roleService" class="com.duoduo.system.service.RoleServiceImpl" />
+
+	<beans:bean id="resourceService" class="com.duoduo.system.service.ResourceServiceImpl" />
+
+	<!-- 登录成功业务处理 -->
+	<beans:bean id="successHandler" class="com.duoduo.system.security.LoginAuthenticationSuccessHandler">
+		<beans:property name="url" value="/index"></beans:property>  <!-- 可变换登录成功后的路径，验证用户是否拥有该权限 -->
+	</beans:bean>
+
+</beans:beans>

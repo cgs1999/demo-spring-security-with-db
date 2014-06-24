@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.duoduo.system.dao.ResourceMapper">
+
+	
+	<resultMap id="Resource" type="com.duoduo.system.model.Resource">
+		<id column="ID" property="id" jdbcType="INTEGER" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="URL" property="url" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="base_columns">
+		ID,NAME,URL
+	</sql>
+	
+	<!-- 根据角色id查询该角色可以访问的资源 -->
+	<select id="selectByRoleId" resultMap="Resource" parameterType="java.lang.Integer">
+		SELECT
+		<include refid="base_columns"/>
+		FROM T_RESOURCE
+		WHERE
+		ID IN (SELECT RESOURCE_ID FROM T_ROLE_RESOURCE WHERE ROLE_ID=#{roleId})
+	</select>
+	
+</mapper>
+
+
